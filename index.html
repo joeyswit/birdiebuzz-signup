@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BirdieBuzz Signup</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; }
+    form { max-width: 400px; margin: auto; display: flex; flex-direction: column; gap: 1rem; 
+}
+    input, select, button { font-size: 1rem; padding: 0.75rem; border: 1px solid #ccc; 
+border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <h1>Subscribe to BirdieBuzz</h1>
+  <form id="signupForm">
+    <input name="name" placeholder="Your Name" required />
+    <input name="phone" placeholder="Phone Number" required />
+    <select name="carrier" required>
+      <option value="">Select Carrier</option>
+      <option>Verizon</option>
+      <option>AT&T</option>
+      <option>T-Mobile</option>
+      <option>Other</option>
+    </select>
+    <input name="url" placeholder="Tournament URL" required />
+    <button type="submit">Subscribe</button>
+  </form>
+  <p id="response" style="margin-top:1rem;"></p>
+  <script>
+    const form = document.getElementById('signupForm');
+    const responseEl = document.getElementById('response');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(form).entries());
+      try {
+        const res = await 
+fetch('https://script.google.com/macros/s/AKfycbybrikCOcSwKx7jqkjt6mtxITQnOFFbWSHbXy8W8OdgR2m0_nzkJDFQCmzDY0j-OuAi/exec', 
+{
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const text = await res.text();
+        responseEl.textContent = text;
+      } catch (err) {
+        responseEl.textContent = '❌ Something went wrong. Please try again.';
+      }
+    });
+  </script>
+</body>
+</html>
+
