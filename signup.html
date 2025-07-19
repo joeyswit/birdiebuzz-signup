@@ -688,6 +688,7 @@ form.addEventListener('submit', (e) => {
     },
     body: JSON.stringify(payload)
   })
+
   .then(response => response.json())
   .then(data => {
     if (!data.sessionId) throw new Error("No sessionId returned");
