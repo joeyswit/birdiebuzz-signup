@@ -262,15 +262,13 @@
   let golferCount = 0;
   const maxGolfers = 15;
 
+  const stripe = Stripe("pk_live_51Pm1nxREcKOamW909Su4Z9ijrkqr6a3pnhPHZZk1ZH5FyUxjjbAP30PC7Uy7jZaxSZRKQxXwUKBjox7JeU5cc7Io00oeuVxi9V");
+
+
   // Helper functions
   function showError(element, message) {
     element.textContent = message;
     element.classList.remove('hidden');
-  }
-
-  function handleSuccess(sessionId) {
-    const stripe = Stripe('pk_live_...');
-    stripe.redirectToCheckout({ sessionId });
   }
 
   function handleError(error) {
