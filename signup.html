@@ -690,12 +690,10 @@ form.addEventListener('submit', (e) => {
     },
     body: JSON.stringify(payload)
   })
-  .then(res => res.json())
+  .then(response => response.json())
   .then(data => {
     if (!data.sessionId) throw new Error("No sessionId returned");
-
-    const stripe = Stripe("pk_live_51Pm1nxREcKOamW909Su4Z9ijrkqr6a3pnhPHZZk1ZH5FyUxjjbAP30PC7Uy7jZaxSZRKQxXwUKBjox7JeU5cc7Io00oeuVxi9V");
-    stripe.redirectToCheckout({ sessionId: data.sessionId });
+    return stripe.redirectToCheckout({ sessionId: data.sessionId });
   })
   .catch(error => {
     alert("Error: " + error.message);
