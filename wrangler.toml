@@ -1,6 +1,5 @@
-name = "birdiebuzz-webhook"
+name = "birdiebuzz-signup"
 main = "src/worker.js"
 compatibility_date = "2025-07-19"
-
 [vars]
-# any env vars if needed, or leave empty
+STRIPE_WEBHOOK_SECRET = "whsec_7Lz62jfWPaJldyARc7qlQJXrekJvgmjv"  # your real webhook secret
