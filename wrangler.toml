@@ -1,0 +1,6 @@
+name = "birdiebuzz-webhook"
+main = "src/worker.js"
+compatibility_date = "2025-07-19"
+
+[vars]
+# any env vars if needed, or leave empty
