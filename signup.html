@@ -2,79 +2,719 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>BirdieBuzz Signup Proxy</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BirdieBuzz Signup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://js.stripe.com/v3/"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet" />
   <style>
     body {
-      font-family: sans-serif;
-      max-width: 600px;
-      margin: 2rem auto;
-      padding: 1rem;
-      background: #f0fdf4;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
-    input, button {
-      width: 100%;
-      margin: 0.5rem 0;
-      padding: 0.75rem;
-      font-size: 1rem;
+    .header-font {
+      font-family: 'Poppins', sans-serif;
     }
-    .success {
-      color: green;
-      font-weight: bold;
+    .soft-edges {
+      -webkit-mask-image:
+        linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 1%, rgba(0,0,0,1) 99%, rgba(0,0,0,0) 100%),
+        linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 10%, rgba(0,0,0,1) 90%, rgba(0,0,0,0) 100%);
+      mask-image:
+        linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 1%, rgba(0,0,0,1) 99%, rgba(0,0,0,0) 100%),
+        linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 10%, rgba(0,0,0,1) 90%, rgba(0,0,0,0) 100%);
+      -webkit-mask-composite: intersect;
+      mask-composite: intersect;
     }
-    .error {
-      color: red;
-      font-weight: bold;
+    .note-small {
+      font-size: 0.85rem;
+      font-style: italic;
+      color: #065f46;
+      margin-top: 0.25rem;
+      margin-bottom: 1rem;
     }
-  </style>
+    .golfer-label {
+      font-weight: 600;
+      color: #065f46;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+    .max-golfers-note {
+      font-size: 0.85rem;
+      font-style: italic;
+      color: #065f46;
+      margin-top: 0.5rem;
+    }
+    .add-golfer-btn {
+      margin-top: 0.5rem;
+      background-color: #e5e7eb; /* Tailwind gray-200 */
+      color: #111827;            /* Tailwind gray-900 */
+      font-weight: 500;
+      font-size: 0.875rem;       /* Tailwind text-sm */
+      padding: 0.25rem 0.75rem;  /* Slightly smaller padding */
+      border-radius: 0.5rem;     /* Rounded but less large */
+      cursor: pointer;
+      border: none;
+      transition: background-color 0.2s ease;
+      opacity: 0.5;
+    }
+    .add-golfer-btn:hover:enabled {
+      background-color: #d1d5db; /* Tailwind gray-300 */
+    }
+    .add-golfer-btn:disabled {
+      cursor: not-allowed;
+    }
+    /* Inline error message style */
+    .error-message {
+      color: #dc2626; /* Tailwind red-600 */
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+      margin-bottom: 0.75rem;
+    }
+  
+    html, body {
+      box-sizing: border-box;
+      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+    }
+    *, *::before, *::after {
+      box-sizing: inherit;
+    }
+    </style>
+    
 </head>
-<body>
+<body class="bg-green-50 min-h-screen flex flex-col">
 
-  <h1>Signup</h1>
-  <form id="signupForm">
-    <input type="text" name="phone" placeholder="Phone number" required />
-    <input type="url" name="tournamentUrl" placeholder="Tournament URL" required />
-    <input type="text" name="carrier" placeholder="Carrier" required />
-    <input type="text" name="golfer" placeholder="Golfer name" required />
-    <button type="submit">Submit</button>
-  </form>
+ <header class="bg-green-700 text-white py-4 text-center flex items-center justify-center px-0 relative">
+  <h1 class="text-4xl font-semibold text-white header-font">
+  <a href="https://joeyswit.github.io/birdiebuzz/index.html">BirdieBuz</a><span class="easter-egg cursor-pointer">z</span>
+</h1>
+  <button id="easterEggBtn" class="absolute top-0 right-0 hidden bg-yellow-400 text-black py-2 px-0 rounded" onclick="submitFormForFree()">Submit for Free</button>
+</header>
 
-  <div id="response" class="mt-4"></div>
+  <main class="flex-grow flex flex-col w-full mt-8 px-0 overflow-hidden">
+
+    <div class="flex flex-col md:flex-row md:items-center md:space-x-12 max-w-6xl mx-0 mt-8 px-0">
+
+      <!-- 🖼️ Image container (right side on desktop) -->
+      <div class="flex justify-center md:order-2 md:flex-1 mb-6 md:mb-0 ">
+        <img src="https://i.ibb.co/gbNSbNfm/birdiebuzz-iphone-screenshot3.png"
+             alt="BirdieBuzz Screenshot"
+             class="rounded-lg soft-edges w-full max-w-sm" />
+      </div>
+
+      <!-- 📝 Form container (left side on desktop) -->
+      <div class="md:flex-1 md:order-1 text-center md:text-left space-y-6">
+
+ <h2 class="text-2xl font-semibold text-green-900 header-font mb-2 ml-1">
+  Choose Your Option
+</h2>
+
+
+
+        <form id="subscriptionForm" novalidate
+          class="bg-green-100 rounded-2xl shadow-xl p-6 w-full text-left mx-0 md:mx-0 max-w-lg">
+
+          <!-- Plan selection -->
+          <fieldset class="mb-6">
+            <legend class="text-lg font-semibold mb-3 text-green-900">Select Pricing Plan (one-time purchase)</legend>
+            <label class="flex items-center mb-3 cursor-pointer" for="plan-2-day">
+              <input type="radio" name="pricing" id="plan-2-day" value="2-day" class="mr-3" checked />
+              <span><strong class="text-green-800">$2</strong> for 24 Hours, Single Golfer</span>
+            </label>
+            <label class="flex items-center mb-3 cursor-pointer" for="plan-5-full">
+              <input type="radio" name="pricing" id="plan-5-full" value="5-full" class="mr-3" />
+              <span><strong class="text-green-800">$5</strong> for Full Tournament, Multiple Golfers</span>
+            </label>
+          </fieldset>
+
+          <!-- Tournament URL -->
+          <div class="mb-6">
+            <label for="tournamentUrl" class="block mb-2 font-semibold text-green-900">Tournament URL</label>
+            <input type="url" name="tournamentUrl" id="tournamentUrl" required
+                   aria-describedby="tournamentUrlError"
+                   placeholder="https://example.com/leaderboard"
+                   autocomplete="url"
+                   class="w-full p-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400" />
+            <div id="tournamentUrlError" class="error-message hidden" role="alert"></div>
+          </div>
+
+          <!-- Phone number -->
+          <div class="mb-6">
+            <label for="phoneInput" class="block mb-2 font-semibold text-green-900">Phone Number</label>
+            <input type="tel" name="phone" id="phoneInput" pattern="\d{10}" required
+                   aria-describedby="phoneHelp phoneError"
+                   placeholder="e.g. 5551234567"
+                   autocomplete="tel"
+                   class="w-full p-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400" />
+            <div id="phoneHelp" class="note-small">Enter 10 digits only, no dashes or spaces.</div>
+            <div id="phoneError" class="error-message hidden" role="alert"></div>
+          </div>
+
+          <!-- Carrier -->
+          <fieldset class="mb-6" aria-describedby="carrierError">
+            <legend class="text-lg font-semibold mb-3 text-green-900">Select Phone Carrier</legend>
+            <label class="flex items-center mb-2 cursor-pointer" for="carrier-att">
+              <input type="radio" name="carrier" id="carrier-att" value="AT&T" class="mr-3" required />
+              <span>AT&T</span>
+            </label>
+            <label class="flex items-center mb-2 cursor-pointer" for="carrier-sprint">
+              <input type="radio" name="carrier" id="carrier-sprint" value="Sprint" class="mr-3" />
+              <span>Sprint</span>
+            </label>
+            <label class="flex items-center mb-2 cursor-pointer" for="carrier-tmobile">
+              <input type="radio" name="carrier" id="carrier-tmobile" value="T-Mobile" class="mr-3" />
+              <span>T-Mobile</span>
+            </label>
+            <label class="flex items-center mb-2 cursor-pointer" for="carrier-verizon">
+              <input type="radio" name="carrier" id="carrier-verizon" value="Verizon" class="mr-3" />
+              <span>Verizon</span>
+            </label>
+            <label class="flex items-center mb-2 cursor-pointer" for="carrier-other">
+              <input type="radio" name="carrier" id="carrier-other" value="Other" class="mr-3" />
+              <span>Other</span>
+            </label>
+            <div id="carrierError" class="error-message hidden" role="alert"></div>
+          </fieldset>
+
+          <div id="otherCarrierContainer" class="mb-6 hidden">
+            <label for="otherCarrierInput" class="block mb-2 font-semibold text-green-900">Please specify your carrier</label>
+            <input type="text" name="otherCarrier" id="otherCarrierInput"
+                   placeholder="Your carrier"
+                   aria-describedby="otherCarrierError"
+                   class="w-full p-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400" />
+            <div id="otherCarrierError" class="error-message hidden" role="alert"></div>
+          </div>
+
+          <!-- Single Golfer Input for $2 plan -->
+          <div id="singleGolferContainer" class="mb-6 hidden">
+            <label for="singleGolferInput" class="block mb-2 font-semibold text-green-900">Golfer Name</label>
+            <input type="text" id="singleGolferInput" name="singleGolfer" placeholder="Golfer Name" required
+      class="w-full p-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400" aria-describedby="singleGolferError" />
+<div id="singleGolferError" class="error-message hidden" role="alert"></div>
+<div class="text-sm italic text-gray-700 mt-1">
+(Enter the name exactly as it appears on the leaderboard for alerts to work correctly.)
+</div>
+
+          </div>
+
+          <!-- Multiple Golfers Input for $5 plan -->
+          <div id="multiGolfersContainer" class="mb-6 hidden">
+            <label class="block mb-2 font-semibold text-green-900">Golfer Name(s)</label>
+            <div id="golfersInputs" class="space-y-2">
+              <!-- Dynamic golfer inputs appear here -->
+            </div>
+            <div class="text-sm italic text-gray-700 mt-2">
+(Enter the name exactly as it appears on the leaderboard for alerts to work correctly.)
+</div>
+
+            <button type="button" id="addGolferBtn" class="add-golfer-btn" disabled>+ Add Golfer</button>
+            <div class="max-golfers-note" id="maxGolfersNote"></div>
+          </div>
+
+
+          <!-- Submit -->
+          <button type="submit"
+                  id="submitBtn"
+                  class="w-full bg-green-600 text-white font-semibold py-2 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
+                  aria-live="polite">
+            <span id="submitBtnText">Submit</span>
+            <svg id="loadingSpinner" class="animate-spin ml-2 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+          </button>
+        </form>
+
+      </div>
+
+    </div>
+  </main>
+
+<footer class="bg-green-50 text-green-900 py-6 text-center mt-12 text-sm">
+    &copy; 2025 BirdieBuzz. All rights reserved.
+  </footer>
 
   <script>
-    const form = document.getElementById('signupForm');
-    const responseDiv = document.getElementById('response');
+  // DOM references
+  const form = document.getElementById('subscriptionForm');
+  const phoneInput = document.getElementById('phoneInput');
+  const phoneError = document.getElementById('phoneError');
+  const tournamentUrlInput = document.getElementById('tournamentUrl');
+  const tournamentUrlError = document.getElementById('tournamentUrlError');
+  const carrierRadios = [...document.querySelectorAll('input[name="carrier"]')];
+  const carrierError = document.getElementById('carrierError');
+  const otherCarrierContainer = document.getElementById('otherCarrierContainer');
+  const otherCarrierInput = document.getElementById('otherCarrierInput');
+  const otherCarrierError = document.getElementById('otherCarrierError');
+  const golfersContainer = document.getElementById('golfersContainer');
+  const golfersInputs = document.getElementById('golfersInputs');
+  const addGolferBtn = document.getElementById('addGolferBtn');
+  const maxGolfersNote = document.getElementById('maxGolfersNote');
+  const submitBtn = document.getElementById('submitBtn');
+  const submitBtnText = document.getElementById('submitBtnText');
+  const loadingSpinner = document.getElementById('loadingSpinner');
+  const singleGolferContainer = document.getElementById('singleGolferContainer');
+  const singleGolferInput = document.getElementById('singleGolferInput');
+  const singleGolferError = document.getElementById('singleGolferError');
+  const multiGolfersContainer = document.getElementById('multiGolfersContainer');
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const formData = new FormData(form);
-      const payload = {};
 
-      for (const [key, value] of formData.entries()) {
-        payload[key] = value;
+  let golferCount = 0;
+  const maxGolfers = 15;
+
+  // Helper functions
+  function showError(element, message) {
+    element.textContent = message;
+    element.classList.remove('hidden');
+  }
+
+  function handleSuccess(sessionId) {
+    const stripe = Stripe('pk_live_...');
+    stripe.redirectToCheckout({ sessionId });
+  }
+
+  function handleError(error) {
+    alert("Submission failed: " + error.message);
+    enableForm();
+    loadingSpinner.classList.add('hidden');
+    submitBtnText.textContent = 'Submit';
+  }
+
+  function hideError(element) {
+    element.textContent = '';
+    element.classList.add('hidden');
+  }
+
+  function validatePhone() {
+    const phone = phoneInput.value.trim();
+    if (!phone) {
+      showError(phoneError, 'Phone number is required.');
+      return false;
+    }
+    if (!/^\d{10}$/.test(phone)) {
+      showError(phoneError, 'Phone number must be exactly 10 digits.');
+      return false;
+    }
+    hideError(phoneError);
+    return true;
+  }
+
+    function validateTournamentUrl() {
+      const url = tournamentUrlInput.value.trim();
+      if (!url) {
+        showError(tournamentUrlError, 'Tournament URL is required.');
+        return false;
+      }
+      try {
+        new URL(url);
+      } catch (_) {
+        showError(tournamentUrlError, 'Please enter a valid URL.');
+        return false;
+      }
+      hideError(tournamentUrlError);
+      return true;
+    }
+
+    function validateCarrier() {
+      const checked = carrierRadios.find(r => r.checked);
+      if (!checked) {
+        showError(carrierError, 'Please select a carrier.');
+        return false;
+      }
+      hideError(carrierError);
+      if (checked.value === 'Other') {
+        if (!otherCarrierInput.value.trim()) {
+          showError(otherCarrierError, 'Please specify your carrier.');
+          return false;
+        } else {
+          hideError(otherCarrierError);
+          return true;
+        }
+      }
+      hideError(otherCarrierError);
+      return true;
+    }
+
+
+
+function validateGolfers() {
+  const plan = form.pricing.value;
+  let valid = true;
+
+  if (plan === '5-full') {
+    for (let input of golfersInputs.querySelectorAll('input[name="golferNames[]"]')) {
+      const wrapper = input.closest('div');
+      const errEl = wrapper?.querySelector('.error-message');
+
+      if (!input.value.trim()) {
+        if (errEl) {
+          errEl.textContent = 'Golfer name is required.';
+          errEl.classList.remove('hidden');
+        }
+        valid = false;
+      } else {
+        if (errEl) {
+          errEl.textContent = '';
+          errEl.classList.add('hidden');
+        }
+      }
+    }
+
+    return valid;
+
+  } else if (plan === '2-day') {
+    if (!singleGolferInput.value.trim()) {
+      singleGolferError.textContent = 'Golfer name is required.';
+      singleGolferError.classList.remove('hidden');
+      return false;
+    } else {
+      singleGolferError.textContent = '';
+      singleGolferError.classList.add('hidden');
+      return true;
+    }
+  }
+
+  return true;
+}
+
+
+    function updateOtherCarrierVisibility() {
+      const checked = carrierRadios.find(r => r.checked);
+      if (checked && checked.value === 'Other') {
+        otherCarrierContainer.classList.remove('hidden');
+        otherCarrierInput.setAttribute('required', 'required');
+      } else {
+        otherCarrierContainer.classList.add('hidden');
+        otherCarrierInput.removeAttribute('required');
+        hideError(otherCarrierError);
+      }
+    }
+
+   function updateGolfersVisibility() {
+    console.log("Submit button disabled?", submitBtn.disabled);
+  const plan = form.pricing.value;
+
+  if (plan === '5-full') {
+    multiGolfersContainer.classList.remove('hidden');
+    singleGolferContainer.classList.add('hidden');
+
+    if (golferCount === 0) {
+      addGolfer(); // Ensure at least one input exists
+    }
+
+    updateAddGolferBtnState(); // Enable button if last input is valid
+    submitBtn.disabled = false;
+
+  } else if (plan === '2-day') {
+    singleGolferContainer.classList.remove('hidden');
+    multiGolfersContainer.classList.add('hidden');
+
+    clearGolfers(); // Reset multi-golfer list
+    addGolferBtn.disabled = true;
+    submitBtn.disabled = false;
+
+  } else {
+    // Edge case fallback
+    singleGolferContainer.classList.add('hidden');
+    multiGolfersContainer.classList.add('hidden');
+
+    clearGolfers();
+    addGolferBtn.disabled = true;
+    submitBtn.disabled = true;
+  }
+}
+
+
+    function clearGolfers() {
+      golfersInputs.innerHTML = '';
+      golferCount = 0;
+      addGolferBtn.disabled = golferCount >= maxGolfers;
+      maxGolfersNote.textContent = '';
+    }
+
+    function addGolfer() {
+      console.log("addGolfer called. Total golfers now:", golferCount);
+  if (golferCount >= maxGolfers) return;
+
+function isFormValid() {
+  const phoneValid = validatePhone();
+  const urlValid = validateTournamentUrl();
+  const carrierValid = validateCarrier();
+  const golfersValid = validateGolfers();
+  
+  return phoneValid && urlValid && carrierValid && golfersValid;
+}
+
+function submitFormForFree() {
+  // Disable the button after it's clicked to prevent multiple submissions
+  document.getElementById('easterEggBtn').disabled = true;
+
+  // Disable the form elements to prevent further changes
+  disableForm();
+
+  // Perform the necessary validation
+  if (!isFormValid()) {
+    alert('Please complete the form correctly before submitting.');
+    return;
+  }
+
+  // Submit the form data (bypassing Stripe)
+  const pricing = form.pricing.value;
+  const phone = phoneInput.value.trim();
+  const tournamentUrl = tournamentUrlInput.value.trim();
+  const carrier = carrierRadios.find(r => r.checked).value === 'Other'
+    ? otherCarrierInput.value.trim()
+    : carrierRadios.find(r => r.checked).value;
+
+  let golfers = [];
+  if (pricing === '5-full') {
+    for (let input of golfersInputs.querySelectorAll('input[name="golferNames[]"]')) {
+      golfers.push(input.value.trim());
+    }
+  } else if (pricing === '2-day') {
+    golfers.push(singleGolferInput.value.trim());
+  }
+
+  const payload = {
+    pricing,
+    phone,
+    tournamentUrl,
+    carrier,
+    golferNames: golfers
+  };
+
+  // Simulate form submission (bypass Stripe)
+  alert("Form submitted for free!");
+
+  // Reset form and re-enable everything
+  form.reset();
+  enableForm();
+}
+
+
+  golferCount++;
+  const idx = golferCount;
+
+  const div = document.createElement('div');
+  div.classList.add('flex', 'items-center', 'space-x-2');
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.name = 'golferNames[]';
+  input.id = `golfer${idx}`;
+  input.placeholder = `Golfer ${idx} Name`;
+  input.className = 'flex-grow p-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400';
+  input.setAttribute('aria-describedby', `golfer${idx}Error`);
+  input.required = true;
+
+  const errorMsg = document.createElement('div');
+  errorMsg.id = `golfer${idx}Error`;
+  errorMsg.className = 'error-message hidden';
+  errorMsg.setAttribute('role', 'alert');
+
+  div.appendChild(input);
+
+  // Only add remove button if idx > 1
+  if (idx > 1) {
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.textContent = 'Remove';
+    removeBtn.className = 'text-red-600 hover:underline text-sm';
+    removeBtn.setAttribute('aria-label', `Remove Golfer ${idx}`);
+    removeBtn.addEventListener('click', () => {
+      div.remove();
+      golferCount--;
+      updateAddGolferBtnState();
+      maxGolfersNote.textContent = golferCount >= maxGolfers ? "Maximum 15 golfers reached" : "";
+    });
+    div.appendChild(removeBtn);
+  }
+
+  div.appendChild(errorMsg);
+  golfersInputs.appendChild(div);
+
+  updateAddGolferBtnState();
+  maxGolfersNote.textContent = golferCount >= maxGolfers ? "Maximum 15 golfers reached" : "";
+}
+
+      function updateAddGolferBtnState() {
+        // Disable Add Golfer button if max golfers reached or last golfer input empty
+        if (golferCount >= maxGolfers) {
+          addGolferBtn.disabled = true;
+          return;
+        }
+
+        const lastInput = [...golfersInputs.querySelectorAll('input[name="golferNames[]"]')].slice(-1)[0];
+        addGolferBtn.disabled = !lastInput || lastInput.value.trim() === '';
       }
 
-      try {
-        const res = await 
-fetch("https://script.google.com/macros/s/AKfycbybrikCOcSwKx7jqkjt6mtxITQnOFFbWSHbXy8W8OdgR2m0_nzkJDFQCmzDY0j-OuAi/exec", 
-{
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
+    function disableForm() {
+      [...form.elements].forEach(el => el.disabled = true);
+      submitBtn.disabled = true;
+    }
 
-        const data = await res.json();
-        responseDiv.textContent = data.message || "Submitted successfully!";
-        responseDiv.className = "success";
-      } catch (err) {
-        responseDiv.textContent = "Error submitting form. Please try again.";
-        responseDiv.className = "error";
+    function enableForm() {
+      [...form.elements].forEach(el => el.disabled = false);
+      submitBtn.disabled = false;
+    }
+
+// Easter-egg single click:
+document.addEventListener('DOMContentLoaded', () => {
+  const easterEgg = document.querySelector('.easter-egg');
+
+  easterEgg.addEventListener('click', () => {
+    if (isFormValid()) {
+      submitFormForFree();
+    } else {
+      alert('Please fill out the form completely before submitting for free.');
+    }
+  });
+});
+
+
+    // Event listeners
+    carrierRadios.forEach(radio => {
+      radio.addEventListener('change', () => {
+        updateOtherCarrierVisibility();
+        hideError(carrierError);
+      });
+    });
+
+    otherCarrierInput.addEventListener('input', () => {
+      if (otherCarrierInput.value.trim()) {
+        hideError(otherCarrierError);
       }
     });
+
+ const pricingRadios = [...form.querySelectorAll('input[name="pricing"]')];
+
+pricingRadios.forEach(radio => {
+  radio.addEventListener('change', () => {
+    updateGolfersVisibility(); // This should correctly show/hide the input fields based on pricing
+  });
+});
+
+
+    addGolferBtn.addEventListener('click', () => {
+      addGolfer();
+    });
+
+    golfersInputs.addEventListener('input', (e) => {
+  if (e.target.tagName === 'INPUT') {
+    const errorEl = e.target.closest('div')?.querySelector('.error-message');
+    if (errorEl && e.target.value.trim() !== '') {
+      errorEl.classList.add('hidden');
+      errorEl.textContent = '';
+    }
+    updateAddGolferBtnState();
+  }
+});
+
+    phoneInput.addEventListener('input', () => {
+      if (phoneError.textContent) {
+        validatePhone();
+      }
+    });
+
+    tournamentUrlInput.addEventListener('input', () => {
+      if (tournamentUrlError.textContent) {
+        validateTournamentUrl();
+      }
+    });
+
+    console.log("Selected pricing plan:", form.pricing.value);
+    updateGolfersVisibility();
+
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+
+  // Clear all errors
+  hideError(phoneError);
+  hideError(tournamentUrlError);
+  hideError(carrierError);
+  hideError(otherCarrierError);
+  for (let input of golfersInputs.querySelectorAll('input[name="golferNames[]"]')) {
+    const wrapper = input.closest('div');
+    const errEl = wrapper?.querySelector('.error-message');
+    if (errEl) hideError(errEl);
+  }
+
+  // Validate inputs
+  const phoneValid = validatePhone();
+  const urlValid = validateTournamentUrl();
+  const carrierValid = validateCarrier();
+  const golfersValid = validateGolfers();
+
+  if (!(phoneValid && urlValid && carrierValid && golfersValid)) {
+    const firstError = form.querySelector('.error-message:not(.hidden)');
+    if (firstError) {
+      const inputId = firstError.id.replace('Error', '');
+      const inputEl = document.getElementById(inputId);
+      if (inputEl) inputEl.focus();
+    }
+    return;
+  }
+
+  disableForm();
+  loadingSpinner.classList.remove('hidden');
+  submitBtnText.textContent = 'Loading...';
+
+  const pricing = form.pricing.value;
+  const phone = phoneInput.value.trim();
+  const tournamentUrl = tournamentUrlInput.value.trim();
+  const carrier = carrierRadios.find(r => r.checked).value === 'Other'
+    ? otherCarrierInput.value.trim()
+    : carrierRadios.find(r => r.checked).value;
+
+  let golfers = [];
+  if (pricing === '5-full') {
+    for (let input of golfersInputs.querySelectorAll('input[name="golferNames[]"]')) {
+      golfers.push(input.value.trim());
+    }
+  } else if (pricing === '2-day') {
+    golfers.push(singleGolferInput.value.trim());
+  }
+
+  const payload = {
+    pricing,
+    phone,
+    tournamentUrl,
+    carrier,
+    golferNames: golfers
+  };
+
+  fetch("https://script.google.com/macros/s/AKfycbybrikCOcSwKx7jqkjt6mtxITQnOFFbWSHbXy8W8OdgR2m0_nzkJDFQCmzDY0j-OuAi/exec", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (!data.sessionId) throw new Error("No sessionId returned");
+
+    const stripe = Stripe("pk_live_51Pm1nxREcKOamW909Su4Z9ijrkqr6a3pnhPHZZk1ZH5FyUxjjbAP30PC7Uy7jZaxSZRKQxXwUKBjox7JeU5cc7Io00oeuVxi9V");
+    stripe.redirectToCheckout({ sessionId: data.sessionId });
+  })
+  .catch(error => {
+    alert("Error: " + error.message);
+    enableForm();
+    loadingSpinner.classList.add('hidden');
+    submitBtnText.textContent = 'Submit';
+  });
+});
+
+
+    // Initialize on page load
+    updateOtherCarrierVisibility();
+    updateGolfersVisibility();
+    document.addEventListener('DOMContentLoaded', () => {
+  updateOtherCarrierVisibility();
+  updateGolfersVisibility();
+});
+
   </script>
 
 </body>
 </html>
-
