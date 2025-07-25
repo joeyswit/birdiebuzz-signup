@@ -19,6 +19,14 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
+    @keyframes spinY {
+      from { transform: rotateY(0deg); }
+      to { transform: rotateY(360deg); }
+    }
+    .spin-y {
+      animation: spinY 1.5s linear infinite;
+      transform-style: preserve-3d;
+    }
     .sticky { position: sticky; }
     .top-0 { top: 0; }
     .header-font {
@@ -93,7 +101,15 @@
     
 </head>
 <body class="bg-green-50 min-h-screen flex flex-col">
-
+  
+  <!-- 🔄 Spinning Y-axis Logo Loader with Text -->
+  <div id="loader" class="fixed inset-0 bg-white z-50 flex flex-col justify-center items-center space-y-4">
+    <div style="perspective: 1000px;">
+      <img src="https://joeyswit.github.io/birdiebuzz/Logo3.png" alt="Loading" class="w-24 h-24 spin-y">
+    </div>
+    <p class="text-green-700 font-semibold text-lg">Loading...</p>
+  </div>
+<div id="content" class="opacity-0 transition-opacity duration-700 ease-out">
  <header class="bg-green-100 py-5 px-4 flex justify-center sticky top-0 z-50 shadow-md">
   <div class="flex items-center justify-center gap-3 w-full max-w-md relative">
     <a href="https://joeyswit.github.io/birdiebuzz/">
@@ -731,6 +747,15 @@ form.addEventListener('submit', (e) => {
 });
 
   </script>
+</div>
+  <script>
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      document.getElementById('loader').style.display = 'none';
+      document.getElementById('content').classList.remove('opacity-0');
+    }, 1500); // Duration of loader
+  });
+</script>
 
 </body>
 </html>
