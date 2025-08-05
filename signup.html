@@ -587,6 +587,9 @@ form.addEventListener('submit', (e) => {
     golferNames: golfers
   };
 
+  // ✅ Log outgoing payload for debugging
+  console.log("📦 Payload being sent to Worker:", payload);
+  
   fetch("https://birdiebuzz-signup.joeyswit.workers.dev/", {
     method: "POST",
     headers: {
