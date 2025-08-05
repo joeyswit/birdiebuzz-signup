@@ -280,7 +280,6 @@
   const otherCarrierContainer = document.getElementById('otherCarrierContainer');
   const otherCarrierInput = document.getElementById('otherCarrierInput');
   const otherCarrierError = document.getElementById('otherCarrierError');
-  const golfersContainer = document.getElementById('golfersContainer');
   const golfersInputs = document.getElementById('golfersInputs');
   const addGolferBtn = document.getElementById('addGolferBtn');
   const maxGolfersNote = document.getElementById('maxGolfersNote');
@@ -292,333 +291,190 @@
   const singleGolferError = document.getElementById('singleGolferError');
   const multiGolfersContainer = document.getElementById('multiGolfersContainer');
 
-
   let golferCount = 0;
   const maxGolfers = 15;
-
   const stripe = Stripe("pk_live_51Pm1nxREcKOamW909Su4Z9ijrkqr6a3pnhPHZZk1ZH5FyUxjjbAP30PC7Uy7jZaxSZRKQxXwUKBjox7JeU5cc7Io00oeuVxi9V");
 
-
-  // Helper functions
   function showError(element, message) {
     element.textContent = message;
     element.classList.remove('hidden');
   }
-
-  function handleError(error) {
-    alert("Submission failed: " + error.message);
-    enableForm();
-    loadingSpinner.classList.add('hidden');
-    submitBtnText.textContent = 'Submit';
-  }
-
   function hideError(element) {
     element.textContent = '';
     element.classList.add('hidden');
   }
-
   function validatePhone() {
     const phone = phoneInput.value.trim();
-    if (!phone) {
-      showError(phoneError, 'Phone number is required.');
-      return false;
-    }
-    if (!/^\d{10}$/.test(phone)) {
-      showError(phoneError, 'Phone number must be exactly 10 digits.');
-      return false;
-    }
-    hideError(phoneError);
-    return true;
+    if (!phone) return showError(phoneError, 'Phone number is required.'), false;
+    if (!/^\d{10}$/.test(phone)) return showError(phoneError, 'Phone number must be exactly 10 digits.'), false;
+    hideError(phoneError); return true;
   }
-
-    function validateTournamentUrl() {
-      const url = tournamentUrlInput.value.trim();
-      if (!url) {
-        showError(tournamentUrlError, 'Tournament URL is required.');
-        return false;
-      }
-      try {
-        new URL(url);
-      } catch (_) {
-        showError(tournamentUrlError, 'Please enter a valid URL.');
-        return false;
-      }
-      hideError(tournamentUrlError);
-      return true;
+  function validateTournamentUrl() {
+    const url = tournamentUrlInput.value.trim();
+    if (!url) return showError(tournamentUrlError, 'Tournament URL is required.'), false;
+    try { new URL(url); } catch (_) { return showError(tournamentUrlError, 'Please enter a valid URL.'), false; }
+    hideError(tournamentUrlError); return true;
+  }
+  function validateCarrier() {
+    const checked = carrierRadios.find(r => r.checked);
+    if (!checked) return showError(carrierError, 'Please select a carrier.'), false;
+    hideError(carrierError);
+    if (checked.value === 'Other' && !otherCarrierInput.value.trim()) {
+      return showError(otherCarrierError, 'Please specify your carrier.'), false;
     }
-
-    function validateCarrier() {
-      const checked = carrierRadios.find(r => r.checked);
-      if (!checked) {
-        showError(carrierError, 'Please select a carrier.');
-        return false;
+    hideError(otherCarrierError); return true;
+  }
+  function validateGolfers() {
+    const plan = form.pricing.value;
+    if (plan === '5-full') {
+      let valid = true;
+      for (let input of golfersInputs.querySelectorAll('input[name="golferNames[]"]')) {
+        const errEl = input.closest('div')?.querySelector('.error-message');
+        if (!input.value.trim()) { showError(errEl, 'Golfer name is required.'); valid = false; }
+        else hideError(errEl);
       }
-      hideError(carrierError);
-      if (checked.value === 'Other') {
-        if (!otherCarrierInput.value.trim()) {
-          showError(otherCarrierError, 'Please specify your carrier.');
-          return false;
-        } else {
-          hideError(otherCarrierError);
-          return true;
-        }
-      }
-      hideError(otherCarrierError);
-      return true;
-    }
-
-
-
-function validateGolfers() {
-  const plan = form.pricing.value;
-  let valid = true;
-
-  if (plan === '5-full') {
-    for (let input of golfersInputs.querySelectorAll('input[name="golferNames[]"]')) {
-      const wrapper = input.closest('div');
-      const errEl = wrapper?.querySelector('.error-message');
-
-      if (!input.value.trim()) {
-        if (errEl) {
-          errEl.textContent = 'Golfer name is required.';
-          errEl.classList.remove('hidden');
-        }
-        valid = false;
-      } else {
-        if (errEl) {
-          errEl.textContent = '';
-          errEl.classList.add('hidden');
-        }
-      }
-    }
-
-    return valid;
-
-  } else if (plan === '2-day') {
-    if (!singleGolferInput.value.trim()) {
-      singleGolferError.textContent = 'Golfer name is required.';
-      singleGolferError.classList.remove('hidden');
-      return false;
+      return valid;
     } else {
-      singleGolferError.textContent = '';
-      singleGolferError.classList.add('hidden');
-      return true;
+      if (!singleGolferInput.value.trim()) { showError(singleGolferError, 'Golfer name is required.'); return false; }
+      hideError(singleGolferError); return true;
     }
   }
-
-  return true;
-}
-
-
-    function updateOtherCarrierVisibility() {
-      const checked = carrierRadios.find(r => r.checked);
-      if (checked && checked.value === 'Other') {
-        otherCarrierContainer.classList.remove('hidden');
-        otherCarrierInput.setAttribute('required', 'required');
-      } else {
-        otherCarrierContainer.classList.add('hidden');
-        otherCarrierInput.removeAttribute('required');
-        hideError(otherCarrierError);
+  function updateOtherCarrierVisibility() {
+    const checked = carrierRadios.find(r => r.checked);
+    if (checked?.value === 'Other') {
+      otherCarrierContainer.classList.remove('hidden');
+      otherCarrierInput.setAttribute('required', 'required');
+    } else {
+      otherCarrierContainer.classList.add('hidden');
+      otherCarrierInput.removeAttribute('required');
+      hideError(otherCarrierError);
+    }
+  }
+  function updateGolfersVisibility() {
+    const plan = form.pricing.value;
+  
+    if (plan === '5-full') {
+      // If coming from $2 plan and single golfer input has a value, carry it over
+      if (singleGolferInput.value.trim()) {
+        clearGolfers();
+        addGolfer();
+        golfersInputs.querySelector('input[name="golferNames[]"]').value = singleGolferInput.value.trim();
+      } else if (golferCount === 0) {
+        addGolfer();
       }
-    }
-
-   function updateGolfersVisibility() {
-    console.log("Submit button disabled?", submitBtn.disabled);
-  const plan = form.pricing.value;
-
-  if (plan === '5-full') {
-    multiGolfersContainer.classList.remove('hidden');
-    singleGolferContainer.classList.add('hidden');
-
-    if (golferCount === 0) {
-      addGolfer(); // Ensure at least one input exists
-    }
-
-    updateAddGolferBtnState(); // Enable button if last input is valid
-    submitBtn.disabled = false;
-
-  } else if (plan === '2-day') {
-    singleGolferContainer.classList.remove('hidden');
-    multiGolfersContainer.classList.add('hidden');
-
-    clearGolfers(); // Reset multi-golfer list
-    addGolferBtn.disabled = true;
-    submitBtn.disabled = false;
-
-  } else {
-    // Edge case fallback
-    singleGolferContainer.classList.add('hidden');
-    multiGolfersContainer.classList.add('hidden');
-
-    clearGolfers();
-    addGolferBtn.disabled = true;
-    submitBtn.disabled = true;
-  }
-}
-
-
-    function clearGolfers() {
-      golfersInputs.innerHTML = '';
-      golferCount = 0;
-      addGolferBtn.disabled = golferCount >= maxGolfers;
-      maxGolfersNote.textContent = '';
-    }
-
-    function addGolfer() {
-      console.log("addGolfer called. Total golfers now:", golferCount);
-  if (golferCount >= maxGolfers) return;
-
-function isFormValid() {
-  const phoneValid = validatePhone();
-  const urlValid = validateTournamentUrl();
-  const carrierValid = validateCarrier();
-  const golfersValid = validateGolfers();
   
-  return phoneValid && urlValid && carrierValid && golfersValid;
-}
-
-... your HTML before stays the same ...
-
-function submitFormForFree() {
-  // Disable the button after it's clicked to prevent multiple submissions
-  document.getElementById('easterEggBtn').disabled = true;
-
-  // Disable the form elements to prevent further changes
-  disableForm();
-
-  // Perform the necessary validation
-  if (!isFormValid()) {
-    alert('Please complete the form correctly before submitting.');
-    return;
-  }
-
-  // Submit the form data (bypassing Stripe)
-  const pricing = form.pricing.value;
-  const phone = phoneInput.value.trim();
-  const tournamentUrl = tournamentUrlInput.value.trim();
-  const carrier = carrierRadios.find(r => r.checked).value === 'Other'
-    ? otherCarrierInput.value.trim()
-    : carrierRadios.find(r => r.checked).value;
-
-  let golfers = [];
-  if (pricing === '5-full') {
-    for (let input of golfersInputs.querySelectorAll('input[name="golferNames[]"]')) {
-      const name = input.value.trim();
-      if (name) golfers.push(name); // Only push non-empty names
-    }
-  } else if (pricing === '2-day') {
-    golfers.push(singleGolferInput.value.trim());
-  }
-
-  const payload = {
-    pricing,
-    phone,
-    tournamentUrl,
-    carrier,
-    golferNames: golfers
-  };
-
-  // Simulate form submission (bypass Stripe)
-  alert("Form submitted for free!");
-
-  // Reset form and re-enable everything
-  form.reset();
-  enableForm();
-}
-
-... rest of your code ...
-
-form.addEventListener('submit', (e) => {
-  e.preventDefault();
-
-  // Clear all errors
-  hideError(phoneError);
-  hideError(tournamentUrlError);
-  hideError(carrierError);
-  hideError(otherCarrierError);
-  for (let input of golfersInputs.querySelectorAll('input[name="golferNames[]"]')) {
-    const wrapper = input.closest('div');
-    const errEl = wrapper?.querySelector('.error-message');
-    if (errEl) hideError(errEl);
-  }
-
-  // Validate inputs
-  const phoneValid = validatePhone();
-  const urlValid = validateTournamentUrl();
-  const carrierValid = validateCarrier();
-  const golfersValid = validateGolfers();
-
-  if (!(phoneValid && urlValid && carrierValid && golfersValid)) {
-    const firstError = form.querySelector('.error-message:not(.hidden)');
-    if (firstError) {
-      const inputId = firstError.id.replace('Error', '');
-      const inputEl = document.getElementById(inputId);
-      if (inputEl) inputEl.focus();
-    }
-    return;
-  }
-
-  disableForm();
-  loadingSpinner.classList.remove('hidden');
-  submitBtnText.textContent = 'Loading...';
-
-  const pricing = form.pricing.value;
-  const phone = phoneInput.value.trim();
-  const tournamentUrl = tournamentUrlInput.value.trim();
-  const carrier = carrierRadios.find(r => r.checked).value === 'Other'
-    ? otherCarrierInput.value.trim()
-    : carrierRadios.find(r => r.checked).value;
-
-  let golfers = [];
-  if (pricing === '5-full') {
-    for (let input of golfersInputs.querySelectorAll('input[name="golferNames[]"]')) {
-      const name = input.value.trim();
-      if (name) golfers.push(name); // Only push non-empty names
-    }
-  } else if (pricing === '2-day') {
-    golfers.push(singleGolferInput.value.trim());
-  }
-
-  const payload = {
-    pricing,
-    phone,
-    tournamentUrl,
-    carrier,
-    golferNames: golfers
-  };
-
-  // ✅ Log outgoing payload for debugging
-  console.log("📦 Payload being sent to Worker:", payload);
+      multiGolfersContainer.classList.remove('hidden');
+      singleGolferContainer.classList.add('hidden');
+      updateAddGolferBtnState();
   
-  fetch("https://birdiebuzz-signup.joeyswit.workers.dev/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (!data.sessionId) throw new Error("No sessionId returned");
-    return stripe.redirectToCheckout({ sessionId: data.sessionId });
-  })
-  .catch(error => {
-    alert("Error: " + error.message);
-    enableForm();
-    loadingSpinner.classList.add('hidden');
-    submitBtnText.textContent = 'Submit';
+    } else {
+      // If coming from $5 plan and at least one golfer name exists, carry first over
+      const firstMulti = golfersInputs.querySelector('input[name="golferNames[]"]');
+      if (firstMulti && firstMulti.value.trim()) {
+        singleGolferInput.value = firstMulti.value.trim();
+      }
+      singleGolferContainer.classList.remove('hidden');
+      multiGolfersContainer.classList.add('hidden');
+      clearGolfers();
+      addGolferBtn.disabled = true;
+    }
+  }
+
+  function clearGolfers() {
+    golfersInputs.innerHTML = '';
+    golferCount = 0;
+    addGolferBtn.disabled = false;
+    maxGolfersNote.textContent = '';
+  }
+  function addGolfer() {
+    if (golferCount >= maxGolfers) return;
+    golferCount++;
+    const idx = golferCount;
+    const div = document.createElement('div');
+    div.classList.add('flex', 'items-center', 'space-x-2');
+    const input = document.createElement('input');
+    input.type = 'text'; input.name = 'golferNames[]';
+    input.placeholder = `Golfer ${idx} Name`;
+    input.className = 'flex-grow p-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400';
+    input.required = true;
+    const errorMsg = document.createElement('div');
+    errorMsg.className = 'error-message hidden';
+    div.appendChild(input);
+    if (idx > 1) {
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button'; removeBtn.textContent = 'Remove';
+      removeBtn.className = 'text-red-600 hover:underline text-sm';
+      removeBtn.onclick = () => { div.remove(); golferCount--; updateAddGolferBtnState(); };
+      div.appendChild(removeBtn);
+    }
+    div.appendChild(errorMsg);
+    golfersInputs.appendChild(div);
+    updateAddGolferBtnState();
+  }
+  function updateAddGolferBtnState() {
+    if (golferCount >= maxGolfers) return addGolferBtn.disabled = true;
+    const lastInput = [...golfersInputs.querySelectorAll('input[name="golferNames[]"]')].pop();
+    addGolferBtn.disabled = !lastInput || !lastInput.value.trim();
+  }
+  function disableForm() { [...form.elements].forEach(el => el.disabled = true); }
+  function enableForm() { [...form.elements].forEach(el => el.disabled = false); }
+  function isFormValid() {
+    return validatePhone() && validateTournamentUrl() && validateCarrier() && validateGolfers();
+  }
+  function submitFormForFree() {
+    disableForm();
+    if (!isFormValid()) return enableForm(), alert('Please complete the form correctly before submitting.');
+    const pricing = form.pricing.value;
+    const phone = phoneInput.value.trim();
+    const tournamentUrl = tournamentUrlInput.value.trim();
+    const carrier = carrierRadios.find(r => r.checked).value === 'Other'
+      ? otherCarrierInput.value.trim()
+      : carrierRadios.find(r => r.checked).value;
+    const golfers = pricing === '5-full'
+      ? [...golfersInputs.querySelectorAll('input[name="golferNames[]"]')].map(i => i.value.trim())
+      : [singleGolferInput.value.trim()];
+    alert("Form submitted for free!");
+    form.reset(); enableForm(); updateGolfersVisibility();
+  }
+
+  // Event bindings
+  carrierRadios.forEach(r => r.addEventListener('change', updateOtherCarrierVisibility));
+  addGolferBtn.addEventListener('click', addGolfer);
+  golfersInputs.addEventListener('input', updateAddGolferBtnState);
+  document.getElementById('easterEggBtn').addEventListener('click', submitFormForFree);
+  form.querySelectorAll('input[name="pricing"]').forEach(radio => radio.addEventListener('change', updateGolfersVisibility));
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    if (!isFormValid()) return;
+    disableForm(); loadingSpinner.classList.remove('hidden'); submitBtnText.textContent = 'Loading...';
+    const pricing = form.pricing.value;
+    const phone = phoneInput.value.trim();
+    const tournamentUrl = tournamentUrlInput.value.trim();
+    const carrier = carrierRadios.find(r => r.checked).value === 'Other'
+      ? otherCarrierInput.value.trim()
+      : carrierRadios.find(r => r.checked).value;
+    const golfers = pricing === '5-full'
+      ? [...golfersInputs.querySelectorAll('input[name="golferNames[]"]')].map(i => i.value.trim())
+      : [singleGolferInput.value.trim()];
+    fetch("https://birdiebuzz-signup.joeyswit.workers.dev/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pricing, phone, tournamentUrl, carrier, golferNames: golfers })
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (!d.sessionId) throw new Error("No sessionId returned");
+        return stripe.redirectToCheckout({ sessionId: d.sessionId });
+      })
+      .catch(err => { alert("Error: " + err.message); enableForm(); loadingSpinner.classList.add('hidden'); submitBtnText.textContent = 'Submit'; });
   });
-});
 
-    // Initialize on page load
-    updateOtherCarrierVisibility();
-    updateGolfersVisibility();
-    document.addEventListener('DOMContentLoaded', () => {
+  // Init
   updateOtherCarrierVisibility();
   updateGolfersVisibility();
-});
+</script>
 
-  </script>
 </div>
   <script>
   window.addEventListener('load', () => {
