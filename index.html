@@ -2,53 +2,536 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BirdieBuzz Signup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BirdieBuzz Signup – 3-Day Free Trial</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://js.stripe.com/v3/"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet" />
   <style>
-    body { font-family: sans-serif; padding: 2rem; }
-    form { max-width: 400px; margin: auto; display: flex; flex-direction: column; gap: 1rem; 
-}
-    input, select, button { font-size: 1rem; padding: 0.75rem; border: 1px solid #ccc; 
-border-radius: 6px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .header-font { font-family: 'Poppins', sans-serif; }
+    .error-message { color: #dc2626; font-size: 0.875rem; margin-top: 0.25rem; margin-bottom: 0.75rem; }
   </style>
 </head>
-<body>
-  <h1>Subscribe to BirdieBuzz</h1>
-  <form id="signupForm">
-    <input name="name" placeholder="Your Name" required />
-    <input name="phone" placeholder="Phone Number" required />
-    <select name="carrier" required>
-      <option value="">Select Carrier</option>
-      <option>Verizon</option>
-      <option>AT&T</option>
-      <option>T-Mobile</option>
-      <option>Other</option>
-    </select>
-    <input name="url" placeholder="Tournament URL" required />
-    <button type="submit">Subscribe</button>
-  </form>
-  <p id="response" style="margin-top:1rem;"></p>
+
+<body class="bg-green-50 min-h-screen flex flex-col">
+  <header class="bg-green-100 py-5 px-4 flex justify-center sticky top-0 z-50 shadow-md">
+    <div class="flex items-center justify-center gap-3 w-full max-w-md">
+      <a href="https://birdiebuzzalerts.com">
+        <img src="/Logo3.png" alt="Bird Logo" class="h-14 md:h-20 w-auto">
+      </a>
+      <a href="https://birdiebuzzalerts.com">
+        <img src="/Text3.png" alt="BirdieBuzz" class="h-12 md:h-16 w-auto">
+      </a>
+    </div>
+  </header>
+
+  <main class="flex-grow">
+    <h2 class="text-2xl md:text-3xl font-semibold text-green-900 header-font text-center mt-10">
+      Try Free for 3 Days
+    </h2>
+
+    <p class="text-center text-gray-800 mt-1 text-base md:text-lg">
+      And then
+      <span class="inline-block border-b-2 border-sky-600 leading-tight">
+        $10/mo. for the base plan
+      </span>
+      (1 golfer • 1 phone number)
+      <br>
+      <span aria-hidden="true" class="block h-2"></span>
+      <span class="block font-semibold text-green-900">Or customize your access pass below</span>
+    </p>
+
+    <div class="px-4 mt-6">
+      <form id="subscriptionForm" class="bg-green-100 rounded-2xl shadow-lg ring-1 ring-green-200/70 p-6 max-w-lg mx-auto">
+        <div class="mb-6">
+          <label for="tournamentUrl" class="block mb-2 font-semibold text-green-900">Tournament URL</label>
+          <input type="url" id="tournamentUrl" required placeholder="https://example.com/leaderboard"
+                 autocomplete="url"
+                 class="w-full p-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400">
+          <div id="tournamentUrlError" class="error-message hidden" role="alert"></div>
+          <div class="text-sm italic text-gray-700 mt-1">
+            (You can change URLs anytime later on the Manage Alerts page.)
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm text-center">
+            <div class="font-semibold text-green-900 mb-2">Add golfers</div>
+            <div class="flex items-center justify-center gap-2">
+              <button type="button" id="gMinus" class="px-3 py-1 border rounded-full hover:bg-gray-50 disabled:opacity-40">−</button>
+              <input id="extrasGolfer" value="0" readonly class="w-14 text-center border rounded py-1">
+              <button type="button" id="gPlus" class="px-3 py-1 border rounded-full hover:bg-gray-50">+</button>
+            </div>
+            <div class="text-sm text-sky-600 mt-2">+$5/mo each</div>
+          </div>
+
+          <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm text-center">
+            <div class="font-semibold text-green-900 mb-2">Add phone numbers</div>
+            <div class="flex items-center justify-center gap-2">
+              <button type="button" id="pMinus" class="px-3 py-1 border rounded-full hover:bg-gray-50 disabled:opacity-40">−</button>
+              <input id="extrasPhone" value="0" readonly class="w-14 text-center border rounded py-1">
+              <button type="button" id="pPlus" class="px-3 py-1 border rounded-full hover:bg-gray-50">+</button>
+            </div>
+            <div class="text-sm text-sky-600 mt-2">+$5/mo each</div>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <label class="block mb-2 font-semibold text-green-900">Golfer Name(s)</label>
+          <div id="golfersInputs" class="space-y-2"></div>
+          <div class="flex justify-between items-center mt-2">
+            <button type="button" id="addGolferBtn"
+                    class="bg-gray-200 text-gray-900 font-medium text-sm px-3 py-1 rounded disabled:opacity-50"
+                    disabled>+ Add golfer</button>
+            <div id="golferSeatNote" class="text-sm italic text-green-900"></div>
+          </div>
+          <div id="golfersError" class="error-message hidden" role="alert"></div>
+          <div class="text-sm italic text-gray-700 mt-1">
+            (Enter the name exactly as it appears on the leaderboard for alerts to work correctly.)
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <label class="block mb-2 font-semibold text-green-900">Phone Number(s)</label>
+          <div id="phoneInputs" class="space-y-2"></div>
+          <div class="flex justify-between items-center mt-2">
+            <button type="button" id="addPhoneBtn"
+                    class="bg-gray-200 text-gray-900 font-medium text-sm px-3 py-1 rounded disabled:opacity-50"
+                    disabled>+ Add phone</button>
+            <div id="phoneSeatNote" class="text-sm italic text-green-900"></div>
+          </div>
+          <div id="phoneError" class="error-message hidden" role="alert"></div>
+          <div class="text-sm italic text-gray-700 mt-1">
+            (Enter 10 digits only, no dashes or spaces.)
+          </div>
+        </div>
+
+        <div class="border-t border-green-200 my-4"></div>
+
+        <p id="pricePreview" class="mt-2 text-center" aria-live="polite">
+          <span class="block text-green-900 font-semibold text-base md:text-lg">
+            Today: $0 (3-day free trial)
+          </span>
+          <span class="block text-green-900 font-semibold text-base md:text-lg">
+            Renews at
+            <span id="renewWrap" class="text-sky-600 font-medium">
+              <span id="renewAmount">$10</span>/mo.
+            </span>
+          </span>
+        </p>
+
+        <button type="submit" id="submitBtn"
+                class="w-full bg-green-600 text-white font-semibold py-2 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center mt-5"
+                aria-live="polite" disabled>
+          <span id="submitBtnText">Start free trial</span>
+          <svg id="loadingSpinner" class="animate-spin ml-2 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+        </button>
+
+        <div class="mt-8">
+          <label class="flex items-start gap-2 text-sm text-gray-700">
+            <input type="checkbox" id="consentCheckbox" class="mt-1">
+            <span>
+              By checking this box, you agree to receive SMS alerts from BirdieBuzz about golfers you follow.
+              Message frequency varies (around 18 per day). Consent isn’t a condition of purchase.
+              Message &amp; data rates may apply. Reply STOP to cancel, HELP for help.
+              See <a href="/terms/" class="text-green-700 underline">Terms</a> and
+              <a href="/privacy/" class="text-green-700 underline">Privacy</a>.
+            </span>
+          </label>
+          <div id="consentError" class="error-message hidden" role="alert"></div>
+        </div>
+      </form>
+
+      <p class="text-xs text-gray-600 italic max-w-lg mx-auto mt-3" role="note" aria-label="Disclaimer">
+        Disclaimer: BirdieBuzz relies on public leaderboard data and live scoring entered on the course.
+        Occasional delays, errors, or unsupported tournaments may affect accuracy. Use for informational purposes only.
+      </p>
+      <div class="h-6"></div>
+      <div class="h-6"></div>
+    </div>
+  </main>
+
+  <div class="text-center text-gray-700 pt-2 pb-1">
+    For support, contact us at
+    <a href="mailto:birdiebuzzalerts@gmail.com" class="text-green-700 hover:underline">birdiebuzzalerts@gmail.com</a>
+  </div>
+
+  <footer class="text-center text-gray-600 pt-6 pb-2">
+    <div class="mb-2">
+      <a href="/terms/" class="text-green-700 hover:underline mx-2">Terms of Service</a> |
+      <a href="/privacy/" class="text-green-700 hover:underline mx-2">Privacy Policy</a> |
+      <a href="/about/" class="text-green-700 hover:underline mx-2">About</a>
+    </div>
+    &copy; 2025 BirdieBuzz, Inc.
+  </footer>
+
   <script>
-    const form = document.getElementById('signupForm');
-    const responseEl = document.getElementById('response');
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const data = Object.fromEntries(new FormData(form).entries());
-      try {
-        const res = await 
-fetch('https://script.google.com/macros/s/AKfycbybrikCOcSwKx7jqkjt6mtxITQnOFFbWSHbXy8W8OdgR2m0_nzkJDFQCmzDY0j-OuAi/exec', 
-{
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-        const text = await res.text();
-        responseEl.textContent = text;
-      } catch (err) {
-        responseEl.textContent = '❌ Something went wrong. Please try again.';
+    let stripe = null;
+
+    try {
+      if (window.Stripe) {
+        stripe = window.Stripe("pk_live_51Pm1nxREcKOamW909Su4Z9ijrkqr6a3pnhPHZZk1ZH5FyUxjjbAP30PC7Uy7jZaxSZRKQxXwUKBjox7JeU5cc7Io00oeuVxi9V");
+      } else {
+        console.warn("Stripe.js not available yet.");
       }
+    } catch (e) {
+      console.warn("Stripe.js failed to load:", e);
+    }
+
+    const form = document.getElementById('subscriptionForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const submitBtnText = document.getElementById('submitBtnText');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+
+    const consentCheckbox = document.getElementById('consentCheckbox');
+    const consentError = document.getElementById('consentError');
+
+    const tournamentUrlInput = document.getElementById('tournamentUrl');
+    const tournamentUrlError = document.getElementById('tournamentUrlError');
+
+    const gMinus = document.getElementById('gMinus');
+    const gPlus = document.getElementById('gPlus');
+    const pMinus = document.getElementById('pMinus');
+    const pPlus = document.getElementById('pPlus');
+
+    const extrasGolferEl = document.getElementById('extrasGolfer');
+    const extrasPhoneEl = document.getElementById('extrasPhone');
+    const renewAmountEl = document.getElementById('renewAmount');
+
+    const phoneInputs = document.getElementById('phoneInputs');
+    const addPhoneBtn = document.getElementById('addPhoneBtn');
+    const phoneSeatNote = document.getElementById('phoneSeatNote');
+    const phoneError = document.getElementById('phoneError');
+
+    const golfersInputs = document.getElementById('golfersInputs');
+    const addGolferBtn = document.getElementById('addGolferBtn');
+    const golferSeatNote = document.getElementById('golferSeatNote');
+    const golfersError = document.getElementById('golfersError');
+
+    const MAX_EXTRAS = 20;
+    const BASE_PRICE = 10;
+    const ADDON_PRICE = 5;
+
+    function clamp(n, min, max) {
+      return Math.max(min, Math.min(max, n | 0));
+    }
+
+    function showError(el, msg) {
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+
+    function hideError(el) {
+      el.textContent = '';
+      el.classList.add('hidden');
+    }
+
+    function allowedPhones() {
+      return 1 + (+extrasPhoneEl.value | 0);
+    }
+
+    function allowedGolfers() {
+      return 1 + (+extrasGolferEl.value | 0);
+    }
+
+    function updateTotal() {
+      const g = +extrasGolferEl.value | 0;
+      const p = +extrasPhoneEl.value | 0;
+      const total = BASE_PRICE + ADDON_PRICE * g + ADDON_PRICE * p;
+      renewAmountEl.textContent = `$${total}`;
+    }
+
+    function createPhoneInput(initial = '') {
+      const isFirst = phoneInputs.querySelectorAll('input[name="phoneNumbers[]"]').length === 0;
+
+      const row = document.createElement('div');
+      row.className = 'flex items-center space-x-2';
+
+      const input = document.createElement('input');
+      input.type = 'tel';
+      input.name = 'phoneNumbers[]';
+      input.placeholder = 'e.g. 5551234567';
+      input.pattern = '\\d{10}';
+      input.autocomplete = 'tel';
+      input.className = 'flex-grow p-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400';
+      input.value = initial || '';
+
+      row.appendChild(input);
+
+      if (!isFirst) {
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.textContent = 'Remove';
+        removeBtn.className = 'text-red-600 hover:underline text-sm';
+        removeBtn.onclick = () => {
+          row.remove();
+          updateSeatsUI();
+        };
+        row.appendChild(removeBtn);
+      }
+
+      phoneInputs.appendChild(row);
+    }
+
+    function createGolferInput(initial = '') {
+      const isFirst = golfersInputs.querySelectorAll('input[name="golferNames[]"]').length === 0;
+
+      const row = document.createElement('div');
+      row.className = 'flex items-center space-x-2';
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.name = 'golferNames[]';
+      input.placeholder = 'Golfer name';
+      input.className = 'flex-grow p-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400';
+      input.value = initial || '';
+
+      row.appendChild(input);
+
+      if (!isFirst) {
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.textContent = 'Remove';
+        removeBtn.className = 'text-red-600 hover:underline text-sm';
+        removeBtn.onclick = () => {
+          row.remove();
+          updateSeatsUI();
+        };
+        row.appendChild(removeBtn);
+      }
+
+      golfersInputs.appendChild(row);
+    }
+
+    function updateSeatsUI() {
+      const phoneCount = phoneInputs.querySelectorAll('input[name="phoneNumbers[]"]').length;
+      const phoneAllowed = allowedPhones();
+
+      addPhoneBtn.disabled = phoneCount >= phoneAllowed;
+      phoneSeatNote.textContent = `Assigned: ${phoneCount}/${phoneAllowed}`;
+
+      if (phoneCount > phoneAllowed) {
+        const rows = Array.from(phoneInputs.children);
+        while (rows.length > phoneAllowed) {
+          rows.pop().remove();
+        }
+      }
+
+      const golferCount = golfersInputs.querySelectorAll('input[name="golferNames[]"]').length;
+      const golferAllowed = allowedGolfers();
+
+      addGolferBtn.disabled = golferCount >= golferAllowed;
+      golferSeatNote.textContent = `Assigned: ${golferCount}/${golferAllowed}`;
+
+      if (golferCount > golferAllowed) {
+        const rows = Array.from(golfersInputs.children);
+        while (rows.length > golferAllowed) {
+          rows.pop().remove();
+        }
+      }
+    }
+
+    function validateTournamentUrl() {
+      const url = tournamentUrlInput.value.trim();
+
+      if (!url) {
+        showError(tournamentUrlError, 'Tournament URL is required.');
+        return false;
+      }
+
+      try {
+        new URL(url);
+      } catch {
+        showError(tournamentUrlError, 'Please enter a valid URL.');
+        return false;
+      }
+
+      hideError(tournamentUrlError);
+      return true;
+    }
+
+    function validatePhones() {
+      hideError(phoneError);
+
+      const inputs = phoneInputs.querySelectorAll('input[name="phoneNumbers[]"]');
+
+      if (inputs.length === 0) {
+        showError(phoneError, 'At least one phone number is required.');
+        return false;
+      }
+
+      for (const input of inputs) {
+        const value = input.value.trim();
+
+        if (!/^\d{10}$/.test(value)) {
+          showError(phoneError, 'Each phone must be exactly 10 digits.');
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    function validateGolfers() {
+      hideError(golfersError);
+
+      const inputs = golfersInputs.querySelectorAll('input[name="golferNames[]"]');
+
+      if (inputs.length === 0) {
+        showError(golfersError, 'Enter at least one golfer.');
+        return false;
+      }
+
+      for (const input of inputs) {
+        if (!input.value.trim()) {
+          showError(golfersError, 'Golfer names can’t be empty.');
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    function validateConsent() {
+      if (!consentCheckbox.checked) {
+        showError(consentError, 'You must agree to receive SMS alerts.');
+        return false;
+      }
+
+      hideError(consentError);
+      return true;
+    }
+
+    function isFormValid() {
+      return validateTournamentUrl() && validatePhones() && validateGolfers() && validateConsent();
+    }
+
+    function gateSubmit() {
+      submitBtn.disabled = !consentCheckbox.checked;
+    }
+
+    function syncStepperStates() {
+      gMinus.disabled = (+extrasGolferEl.value | 0) === 0;
+      pMinus.disabled = (+extrasPhoneEl.value | 0) === 0;
+    }
+
+    [gMinus, gPlus, pMinus, pPlus].forEach(btn => {
+      btn.addEventListener('click', e => {
+        const isGolferButton = e.currentTarget === gMinus || e.currentTarget === gPlus;
+        const target = isGolferButton ? extrasGolferEl : extrasPhoneEl;
+        const direction = (e.currentTarget === gMinus || e.currentTarget === pMinus) ? -1 : 1;
+
+        target.value = clamp((+target.value | 0) + direction, 0, MAX_EXTRAS);
+
+        updateTotal();
+        updateSeatsUI();
+        syncStepperStates();
+      });
     });
+
+    addPhoneBtn.addEventListener('click', () => {
+      createPhoneInput('');
+      updateSeatsUI();
+    });
+
+    addGolferBtn.addEventListener('click', () => {
+      createGolferInput('');
+      updateSeatsUI();
+    });
+
+    consentCheckbox.addEventListener('change', () => {
+      hideError(consentError);
+      gateSubmit();
+    });
+
+    tournamentUrlInput.addEventListener('input', () => {
+      hideError(tournamentUrlError);
+    });
+
+    phoneInputs.addEventListener('input', () => {
+      hideError(phoneError);
+    });
+
+    golfersInputs.addEventListener('input', () => {
+      hideError(golfersError);
+    });
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+
+      if (!isFormValid()) return;
+
+      [...form.elements].forEach(el => el.disabled = true);
+      loadingSpinner.classList.remove('hidden');
+      submitBtnText.textContent = 'Loading...';
+
+      const extrasGolfer = +extrasGolferEl.value | 0;
+      const extrasPhone = +extrasPhoneEl.value | 0;
+
+      const tournamentUrl = tournamentUrlInput.value.trim();
+
+      const phoneNumbers = [...phoneInputs.querySelectorAll('input[name="phoneNumbers[]"]')]
+        .map(input => input.value.trim());
+
+      const golferNames = [...golfersInputs.querySelectorAll('input[name="golferNames[]"]')]
+        .map(input => input.value.trim());
+
+      const consent = consentCheckbox.checked;
+      const consentTs = new Date().toISOString();
+
+      fetch("https://birdiebuzz-signup.joeyswit.workers.dev/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          tournamentUrl,
+          phoneNumbers,
+          golferNames,
+          extrasGolfer,
+          extrasPhone,
+          consent,
+          consentTs
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (!data.sessionId) {
+          throw new Error(data.error || "No sessionId returned");
+        }
+
+        if (!stripe) {
+          if (data.checkoutUrl || data.url) {
+            window.location.href = data.checkoutUrl || data.url;
+            return;
+          }
+
+          alert("Payment couldn’t start. Please open this page in Safari or Chrome with Stripe allowed.");
+          return;
+        }
+
+        return stripe.redirectToCheckout({ sessionId: data.sessionId });
+      })
+      .catch(error => {
+        alert("Error: " + error.message);
+
+        [...form.elements].forEach(el => el.disabled = false);
+        loadingSpinner.classList.add('hidden');
+        submitBtnText.textContent = 'Start free trial';
+        gateSubmit();
+      });
+    });
+
+    createPhoneInput('');
+    createGolferInput('');
+    updateTotal();
+    updateSeatsUI();
+    gateSubmit();
+    syncStepperStates();
   </script>
 </body>
 </html>
-
